@@ -1,3 +1,3 @@
-# Cassidy-s-guides
+# Cassidy's Guides
 
 Disclaimer: I am still a CS student, these guides may contain inaccuracies, please open an issue if you spotted one.
