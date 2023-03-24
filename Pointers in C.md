@@ -14,9 +14,9 @@ But this is only half correct, and a better answer would be:
 
 "A pointer is an address _plus type information_."
 
-Why? There's another common misconception about pointers and memory access. When it come to dereferencing pointers, most sources will give you a graph depicting RAM as a stack of boxes. There's a box labeled `0x8D905F1694`, the next box is labeled `0x8D905F1695`, and so on. Then the process of dereferencing a pointer is depicted as locating the box labeled `0x8D905F1694` and get its contents.
+Why? There's a common misconception about pointers and memory access. When it come to dereferencing pointers, most sources will give you a graph depicting RAM as a stack of boxes. There's a box labeled `0x8D905F1694`, the next box is labeled `0x8D905F1695`, and so on. Then the process of dereferencing a pointer is depicted as locating the box labeled `0x8D905F1694` and get its contents.
 
-Now, while RAM is indeed divided into "words" that's reasonably similar to boxes, dereferencing is A LOT more than just grabbing the contents of the word the pointer pointed to. Depends on the computer's specifications, the size of a word can vary. A simple `char` usually does not require an whole word, while a struct can potentially require multiple words. Obviously, size information is required so the correct amount of data is retrived from the address.
+Now, while the RAM is indeed divided into "words" that's reasonably similar to boxes, dereferencing is A LOT more than just grabbing the contents of the word the pointer pointed to. Depends on the computer's specifications, the size of a word can vary. A simple `char` usually does not require an whole word, while a struct can potentially require multiple words. Obviously, size information is required so the correct amount of data is retrived from the address.
 This is why we have things like `int*` and `char*`, a `int*` basically says: Hey, I have a memory address, I want access it as if it's storing an `int`. And `void*` means: Well, I do have an address, but I don't really know how to access it yet. This is why we have code like this:
 
 ```c
