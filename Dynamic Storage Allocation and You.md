@@ -27,3 +27,17 @@ void foo(int count) {
 }
 ```
 What could possibly go wrong? Of course, there's no guard statement against invalid inputs, but everyone can see that, what else can you spot?
+The answer is that there is no check for `malloc()` returning a `NULL`. When allocating large amount of space, `malloc()` and its friends can actually fail, and in that case `a[i] = i;` will generate a segfault due to dereferencing a null pointer. 
+Always check before use and after reallocation, and make sure to remember to free all allocated memory in all control paths before returning really is all you need to know. There's a all too common pitfall that I believe a special mention though, is that most people forget to free memory when the function is returning an error. Like this:
+```c
+int foo(){
+    char *str = malloc(100);
+    // Do something that can fail here
+    if (failed) {
+        fprintf(stderr, "Failed!");
+        return -1; // No free() here!
+    }
+    free(str);
+    return results;
+}
+```
