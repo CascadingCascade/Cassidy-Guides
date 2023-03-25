@@ -65,7 +65,9 @@ int main(void) {
 What's going to happen is what happens when any function is called: one copy for each argument is created, then these copies and control is passed to the function. So even though `a` and `b` are modified in `bad_strcat`, the original `c` and `d` remain intact and the resulting "strcat" is accessible through `c`.
 
 # Pointers and Arrays
-Arrays are commonly said to "decay into a pointer" when you pass them into a function. What does that means? This is yet another thing on the long list of useful stuff your teacher probably didn't told you. When you write something like this: `int a[10];`, you _are_ declaring an array, and being an array of `int`, this array's type really is `int[10]`, and this data type have a size of ten `int`s. This is why the all too common `sizeof(a) / sizeof(a[0])` trick works. But functions don't accept arrays, they _can't_ accept arrays. (Apparently due to some obscure historical reason) so when you pass `a` into a function, the compiler gives the function the next best thing: A pointer to the first element of the array.
+Arrays are commonly said to "decay into a pointer" when you pass them into a function. What does that means? This is yet another thing on the long list of useful stuff your teacher probably didn't told you.
+When you write something like this: `int a[10];`, you _are_ declaring an array, and being an array of `int`, this array's type really is `int[10]`, and this data type have a size of ten `int`s. This is why the all too common `sizeof(a) / sizeof(a[0])` trick works.
+But functions don't accept arrays, they _can't_ accept arrays. (Apparently due to some obscure historical reason) so when you pass `a` into a function, the compiler gives the function the next best thing: A pointer to the first element of the array.
 At this point it have ceased to be a `int[10]` and became a simple `int*`, so we say the array decayed into a pointer. It is _possible_, however, to pass an array to a function by _passing a pointer to an array_, like this:
 ```c
 void do_something(int (*a)[10]) {
