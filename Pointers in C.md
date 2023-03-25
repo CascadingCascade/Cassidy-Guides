@@ -32,3 +32,33 @@ This is why we have different types like `int*` and `char*`, an `int*` basically
     }
 ```
 With this in mind, double pointers, like `int**` basically means: Hey, here's a memory address, I know there's another memory address located there, and I want to use that memory address as if it's pointing to an `int`. Triple pointers are the same deal: Here's an address, it contains another address, which points to yet another address which finally points to the location I want to access as if it contains [some data type].
+
+This concludes the discussion about what a pointer is, let's examine some common usages of pointers, here's a function every introduction to pointers on this planet uses:
+```c
+void swap(int *a, int *b) {
+    int c = *a;
+    *a = *b;
+    *b = c;
+}
+```
+Then there's typically some discussion about "pass by value" and "pass by reference". Now, while this `swap()` function is indeed the archetypical example of pass by reference, I mean, looking these two pointers! There's point I must make:
+
+_The reference being passed is still, by itself a value._
+
+What does that means? Here's another function:
+```c
+void bad_strcat(char *a, char *b) {
+    while (*a != '\0') a++;
+    while (*b != '\0') *(a++) = *(b++);
+    *(a++) = '\0';
+}
+```
+And what happens when we do something like this?:
+```c
+int main(void) {
+    char c[20] = "str";
+    char d[20] = "cat";
+    bad_strcat(c, d);
+}
+```
+What's going to happen is what happens when any function is called: one copy for each argument is created, then these copies and control is passed to the function. So even though `a` and `b` are modified in `bad_strcat`, the original `c` and `d` remain intact and the resulting "strcat" is accessible through `c`.
