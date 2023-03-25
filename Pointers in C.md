@@ -16,14 +16,14 @@ But this is only half correct, and a better answer would be:
 
 (Strictly speaking though, the type information part is handled by the compiler and the variable itself more or less really just store the address, but you get the idea.)
 
-Why? There's a common misconception about pointers and memory access. When it come to dereferencing pointers, many sources will give you a graph depicting RAM as a stack of boxes. There's a box labeled `0x8D905F1694`, the next box is labeled `0x8D905F1695`, and so on. Then the process of dereferencing a pointer is depicted as locating the box labeled `0x8D905F1694` and get its contents.
+Why? There's a common misconception about pointers and memory access. When it come to dereferencing pointers, many sources will give you a graph depicting the RAM as a stack of boxes. There's a box labeled `0x8D905F1694`, the next box is labeled `0x8D905F1695`, and so on. Then the process of dereferencing a pointer is depicted as locating the box labeled `0x8D905F1694` and get its contents.
 
 Now, while the RAM is indeed divided into "words" that's reasonably similar to boxes, dereferencing is A LOT more than just grabbing the contents of the word the pointer pointed to. A simple `char` usually would not require an whole word, while a struct can potentially require multiple words. Obviously, size information is required so the correct amount of data is retreived from the address. Not to mention pointer arithmetics: They are simply impossible if we don't know each element's size in an array, which is why a variable length array(VLA) declaration like this is invalid:
 ```c
 int a[][]; // Invalid
-int b[10][] // Valid
+int b[10][]; // Valid
 ```
-This is why we have different types like `int*` and `char*`, an `int*` basically says: Hey, I have a memory address, I want access it as if it's storing an `int`. And `void*` means: Well, I do have an address, but I don't really know how to access it yet. This is why we have code like this:
+This is why we have different types like `int*` and `char*`, an `int*` basically says: Hey, I have a memory address, I want to access it as if it's storing an `int`. And `void*` means: Well, I do have an address, but I don't really know how to access it yet. This is why we have code like this:
 ```c
     int cmp(const void* a, const void* b) {
         // When we cast pointers, we are basically saying:
@@ -76,3 +76,8 @@ void do_something(int (*a)[10]) {
     //Do something
 }
 ```
+
+# Strict Aliasing, or why you should NOT cast pointers carelessly
+There is another important thing your teacher probably didn't told you, it's the "Strict Aliasing" rule. It basically means you may only access values through pointers of compatible types.
+What are "compatible types", then? This is where thing get complex, but the rule of thumb is that with the exception of `char*`, which is supposed to be compatible with every type, only access value through pointers of their actual type or its CVR variants (CVR stands for `const`, `volatile` and `restrict`). 
+Because the compiler is allowed presume a value won't be accessed as invalid types, it may perform optimizations based on that assumption, which in turn can break your program if you did not follow this rule.
