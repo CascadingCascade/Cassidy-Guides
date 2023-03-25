@@ -15,7 +15,8 @@ int* foo(void) {
     return a; // So the pointer returned points to nothing except garbage values
 }
 ```
-There are five and only five functions for dynamic memory management. Memory may be allocated with `malloc()` or `calloc()` or since C11, `aligned_alloc()`. Once allocated, memory must be freed through `realloc()` or `free()`, otherwise there's going to be a memory leak. Sounds easy, right? Let's look at some code:
+Of course, there are many situations where we need more space than what the stack can supply, or we need a variable that can be used beyond the scope it was declared in. This is the where the heap and dynamic memory allocation enter the picture.
+In C, there are five and only five functions for dynamic memory management. Memory may be allocated with `malloc()` or `calloc()` or since C11, `aligned_alloc()`. Once allocated, memory must be freed through `realloc()` or `free()`, otherwise there's going to be a memory leak. Sounds easy, right? Let's look at some code:
 ```c
 void foo(int count) {
     int *a = malloc(count * sizeof(int));
