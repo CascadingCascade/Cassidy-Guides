@@ -73,3 +73,28 @@ void addRule(struct NFA* nfa, struct transRule* rule, int loc) {
     state->rules[state->ruleCount++] = rule;
 }
 ```
+Of course, since `statePool[0] is defined to be its starting state, and statePool[1] is defined to be its accepting state.`,
+we will need to initialize that when creating a NFA object:
+```c
+/**
+ * @brief creates and initializes a NFA
+ * @returns pointer to the newly created NFA
+ */
+struct NFA* createNFA(void) {
+    struct NFA* nfa = malloc(sizeof(struct NFA));
+
+    nfa->stateCount = 0;
+    nfa->statePool = malloc(sizeof(struct NFAState*) * 5);
+    nfa->ruleCount = 0;
+    nfa->rulePool = malloc(sizeof(struct transRule*) * 10);
+    nfa->CSCount = 0;
+    nfa->currentStates = malloc(sizeof(struct NFAState*) * 5);
+    nfa->subCount = 0;
+    nfa->subs = malloc(sizeof(struct NFA*) * 5);
+    nfa->wrapperFlag = 0;
+
+    addState(nfa, createState());
+    addState(nfa, createState());
+    return nfa;
+}
+```
