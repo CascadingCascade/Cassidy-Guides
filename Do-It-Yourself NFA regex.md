@@ -200,8 +200,8 @@ star:
                 literal.
             literal.
 ```
-You can learn about this fascinating concept at [Wikipedia](https://en.wikipedia.org/wiki/Abstract_syntax_tree).
-To begin building an AST, let's define a node:
+You can learn more about this fascinating concept at [Wikipedia](https://en.wikipedia.org/wiki/Abstract_syntax_tree). 
+For now we will focus on how to build an AST, let's begin by defining a node:
 ```c
 /**
  * @brief Definition for a binary abstract syntax tree (AST) node
@@ -213,3 +213,165 @@ struct ASTNode {
 };
 ```
 Note that since there are only binary and unary operators in our case, a binary tree is sufficient.
+To ensure the correct precedence, we must jump from a left parenthesis to its matching right parenthesis while searching, 
+ignoring whatever's inside the parentheses temporarily. We will achieve that with this helper function:
+```c
+/**
+ * @brief utility function to locate the first occurrence
+ *        of a character in a string while respecting parentheses
+ * @param str target string
+ * @param key the character to be located
+ * @returns the index of its first occurrence, `0` if it could not be found
+ */
+size_t indexOf(const char* str, char key) {
+    int depth = 0;
+
+    for (size_t i = 0; i < strlen(str); ++i) {
+        const char c = str[i];
+
+        if(depth == 0 && c == key) {
+            return i;
+        }
+        if(c == '(') depth++;
+        if(c == ')') depth--;
+    }
+    // Due to the way this function is intended to be used,
+    // it's safe to assume the character will not appear as
+    // the string's first character
+    // thus `0` is used as the `not found` value
+    return 0;
+}
+``` 
+Here's another utiliy function to make up for C's lack of a builtin equivalent to, say, Java's `substring()`:
+```c
+/**
+ * @brief utility function to create a substring
+ * @param str target string
+ * @param begin starting index, inclusive
+ * @param end ending index, inclusive
+ * @returns pointer to the newly created substring
+ */
+char* substring(const char* str, size_t begin, size_t end) {
+    char* res = malloc(end - begin + 2);
+    strncpy(res, str + begin, end - begin + 1);
+    res[end - begin + 1] = '\0';
+    return res;
+}
+```
+With these two utility functions, let's build the AST:
+```c
+/**
+ * @brief recursively constructs a AST from a preprocessed regex string
+ * @param input regex
+ * @returns pointer to the resulting tree
+ */
+struct ASTNode* buildAST(const char* input) {
+
+    struct ASTNode* node = createNode('\0');
+    node->left = NULL;
+    node->right = NULL;
+    const size_t len = strlen(input);
+    size_t index;
+
+    // Empty input
+    if(len == 0) return node;
+
+    // Character literals
+    if(len == 1) {
+        node->content = input[0];
+        return node;
+    }
+
+    // Discard parentheses
+    if(input[0] == '(' && input[len - 1] == ')') {
+        char* temp = substring(input, 1, len - 2);
+        destroyNode(node);
+        node = buildAST(temp);
+
+        free(temp);
+        return node;
+    }
+
+    // Union
+    index = indexOf(input, '|');
+    if(index) {
+        node->content = '|';
+
+        char* temp1 = substring(input, 0, index - 1);
+        char* temp2 = substring(input, index + 1, len - 1);
+        node->left = buildAST(temp1);
+        node->right = buildAST(temp2);
+
+        free(temp2);
+        free(temp1);
+        return node;
+    }
+
+    // Concatenation
+    index = indexOf(input, '\n');
+    if(index) {
+        node->content = '\n';
+
+        char* temp1 = substring(input, 0, index - 1);
+        char* temp2 = substring(input, index + 1, len - 1);
+        node->left = buildAST(temp1);
+        node->right = buildAST(temp2);
+
+        free(temp2);
+        free(temp1);
+        return node;
+    }
+
+    // Kleene star
+    // Testing with indexOf() is unnecessary here,
+    // Since all other possibilities have been exhausted
+    node->content = '*';
+    char* temp = substring(input, 0, len - 2);
+    node->left = buildAST(temp);
+    node->right = NULL;
+
+    free(temp);
+    return node;
+}
+```
+I trust that you can just read the code and understand it? 
+Anyway, the idea is that we go down one level every time a matching pair of parentheses are encountered, 
+the function will have as many levels of recursion as the regex inputted.
+for the `(c|a*b)*` example earlier, it will be parsed like this:
+```
+1.
+star:
+    (c|a*b)
+2.
+star:
+    c|a*b
+3.
+star:
+    union:
+        c
+        a*b
+4.
+star:
+    union:
+        literal.
+        concatenation:
+            a*
+            b
+5.
+star:
+    union:
+        literal.
+        concatenation:
+            star:
+                a
+            literal.
+6.
+star:
+    union:
+        literal.
+        concatenation:
+            star:
+                literal.
+            literal.
+```
+You get the idea? Good.
