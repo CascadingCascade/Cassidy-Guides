@@ -375,3 +375,125 @@ star:
             literal.
 ```
 You get the idea? Good.
+### Building the NFA from AST
+Finally the real stuff, yeah? 
+The algorithm we will use is recursive like what we've used to build the AST, 
+which is in turn recursive just like the regex itself. 
+(Come to think of it, formal language theory really is recursion all the way down.) 
+It builds the NFA by combining sub NFAs,
+you can read about the details of this algorithm on [Wikipedia](https://en.wikipedia.org/wiki/Thompson%27s_construction), 
+here I will just show you the code and analysis where it's warranted:
+```c
+struct NFA* compileFromAST(struct ASTNode* root) {
+
+    struct NFA* nfa = createNFA();
+
+    // Empty input
+    if (root->content == '\0') {
+        addRule(nfa, createRule(nfa->statePool[1], '\0'), 0);
+        return nfa;
+    }
+
+    // Character literals
+    if (isLiteral(root->content)) {
+        addRule(nfa, createRule(nfa->statePool[1], root->content), 0);
+        return nfa;
+    }
+
+    switch (root->content) {
+
+        case '\n': {
+            struct NFA* ln = compileFromAST(root->left);
+            struct NFA* rn = compileFromAST(root->right);
+
+            // Redirects all rules targeting ln's accepting state to
+            // target rn's starting state
+            redirect(ln, ln->statePool[1], rn->statePool[0]);
+
+            // Manually creates and initializes a special
+            // "wrapper" NFA
+            destroyNFA(nfa);
+            struct NFA* wrapper = malloc(sizeof(struct NFA));
+            wrapper->stateCount = 2;
+            wrapper->statePool = malloc(sizeof(struct NFAState*) * 2);
+            wrapper->subCount = 0;
+            wrapper->subs = malloc(sizeof(struct NFA*) * 2);
+            wrapper->ruleCount = 0;
+            wrapper->rulePool = malloc(sizeof(struct transRule*) * 3);
+            wrapper->CSCount = 0;
+            wrapper->currentStates = malloc(sizeof(struct NFAState*) * 2);
+            wrapper->wrapperFlag = 1;
+            wrapper->subs[wrapper->subCount++] = ln;
+            wrapper->subs[wrapper->subCount++] = rn;
+
+            // Maps the wrapper NFA's starting and ending states
+            // to its sub NFAs
+            wrapper->statePool[0] = ln->statePool[0];
+            wrapper->statePool[1] = rn->statePool[1];
+
+            return wrapper;
+        }
+        case '|': {
+
+            struct NFA* ln = compileFromAST(root->left);
+            struct NFA* rn = compileFromAST(root->right);
+            nfa->subs[nfa->subCount++] = ln;
+            nfa->subs[nfa->subCount++] = rn;
+
+            // Adds empty character transition rules
+            addRule(nfa, createRule(ln->statePool[0], '\0'), 0);
+            addRule(ln, createRule(nfa->statePool[1], '\0'), 1);
+            addRule(nfa, createRule(rn->statePool[0], '\0'), 0);
+            addRule(rn, createRule(nfa->statePool[1], '\0'), 1);
+
+            return nfa;
+        }
+        case '*': {
+            struct NFA* ln = compileFromAST(root->left);
+            nfa->subs[nfa->subCount++] = ln;
+
+            addRule(ln, createRule(ln->statePool[0], '\0'), 1);
+            addRule(nfa, createRule(ln->statePool[0], '\0'), 0);
+            addRule(ln, createRule(nfa->statePool[1], '\0'), 1);
+            addRule(nfa, createRule(nfa->statePool[1], '\0'), 0);
+
+            return nfa;
+        }
+    }
+
+    // Fallback, shouldn't happen in normal operation
+    destroyNFA(nfa);
+    return NULL;
+}
+```
+the `redirect()` is defined as:
+```c
+/**
+ * @brief helper function to recursively redirect transition rule targets
+ * @param nfa target NFA
+ * @param src the state to redirect away from
+ * @param dest the state to redirect to
+ * @returns void
+ */
+void redirect(struct NFA* nfa, struct NFAState* src, struct NFAState* dest) {
+    for (int i = 0; i < nfa->subCount; ++i) {
+        redirect(nfa->subs[i], src, dest);
+    }
+    for (int i = 0; i < nfa->ruleCount; ++i) {
+        struct transRule* rule = nfa->rulePool[i];
+        if (rule->target == src) {
+            rule->target = dest;
+        }
+    }
+}
+```
+The algorithm is reasonably straight forward with the exception of concatenation.
+It requires that we make the `ln`'s starting state the parent NFA's starting state, 
+and `rn`'s accepting state the parent's accepting state, 
+as well make `ln`'s accepting state `rn`'s starting state.
+To achieve that we first redirect all rules targeting `ln`'s accepting state to 
+target `rn`'s starting state, essentially rendering it unreachable. 
+(Don't worry, since it's still reachable through `statePool`, no memory is leaked.)
+Then we creates a special "wrapper" NFA that doesn't really have any states of its own, 
+(Hence the `wrapperFlag` to prevent double freeing when destorying NFA objects.) 
+but purely function as a gateway between the two sub NFAs and shallower levels of recursion.
