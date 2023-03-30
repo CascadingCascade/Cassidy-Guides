@@ -127,6 +127,17 @@ To do that, we simply need to identify where an implicit concatenation is happen
 then insert a relevant symbol. Here's the code:
 ```c
 /**
+ * @brief helper function to determine whether a character should be
+ *        considered a character literal
+ * @param ch the character to be tested
+ * @returns `1` if it is a character literal
+ * @returns `0` otherwise
+ */
+int isLiteral(const char ch) {
+    return !(ch == '(' || ch == ')' || ch == '*' || ch == '\n' || ch == '|');
+}
+
+/**
  * @brief performs preprocessing on a regex string,
  *        making all implicit concatenations explicit
  * @param input target regex string
@@ -168,3 +179,37 @@ char* preProcessing(const char* input) {
 ```
 Take note of that if condition which spanned six lines, 
 otherwise this algorithm just does what it says on the tin, there's not much to analyse.
+### The Abstract Syntax Tree
+When we evaluate a regex by hand, we follow various rules. For example, when we compute this:
+```
+regex: (c|a*b)*
+string: caba
+```
+We first note that there's star at the regex's end, and the parentheses signified that this star applies to the entire `c|a*b`.
+Then we select `c` from `c|a*b`, then `a*b` from `c|a*b` to match that `ab`, repeat `a` once.
+But since neither `c` nor `a*b` can match the final `a`, this string does not belongs the regular language described by the regex.
+The point to take away from this example is during evaluation, it is vital to have _a sense of precedence and scope_.
+Luckily, both concepts can be described simultaneously by the abstract syntax tree. 
+An AST constructed from that regex might look like this: 
+```
+star:
+    union:
+        literal.
+        concatenation:
+            star:
+                literal.
+            literal.
+```
+You can learn about this fascinating concept at [Wikipedia](https://en.wikipedia.org/wiki/Abstract_syntax_tree).
+To begin building an AST, let's define a node:
+```c
+/**
+ * @brief Definition for a binary abstract syntax tree (AST) node
+ */
+struct ASTNode {
+    char content;          ///< the content of this node
+    struct ASTNode* left;  ///< left child
+    struct ASTNode* right; ///< right child
+};
+```
+Note that since there are only binary and unary operators in our case, a binary tree is sufficient.
