@@ -5,7 +5,7 @@ But the close association between automatas and graph theory presents opportunit
 # How to describe an finite automata?
 Formally, a NFA have five components: Starting state(s), recognized alphabets, transition rules, available states, accepting state(s). 
 And like I've said, we will not rely too much on this and we are going to do it in the graph theory way. 
-Let's begin by defining a transition rule, which would an edge in a graph representation of a NFA:
+Let's begin by defining a transition rule, which would be an edge in a graph representation of a NFA:
 ```c
 /**
  * @brief Definition for a NFA state transition rule
