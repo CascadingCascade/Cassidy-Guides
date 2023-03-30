@@ -672,7 +672,7 @@ void testHelper(const char* regex, const char* string, const int expected) {
     // reallocates the outermost NFA's current states pool
     // because it will actually be used to store all the states
     nfa->currentStates = realloc(nfa->currentStates, sizeof(struct NFAState*) * 100);
-    // Starts the NFA by add its starting state to the pool
+    // Starts the NFA by adding its starting state to the pool
     nfa->currentStates[nfa->CSCount++] = nfa->statePool[0];
 
     // feeds empty characters into the NFA before and after
