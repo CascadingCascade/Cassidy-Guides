@@ -664,7 +664,6 @@ void testHelper(const char* regex, const char* string, const int expected) {
     char* temp = preProcessing(regex);
     struct ASTNode* node = buildAST(temp);
 
-
     struct NFA* nfa = compileFromAST(node);
     postProcessing(nfa);
 
