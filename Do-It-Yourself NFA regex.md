@@ -18,7 +18,7 @@ struct transRule {
 There's no information about the state to start from, why? Because we don't need to include it, 
 we can simply let the state from which it starts from keep a list of rules starting from this state.
 (That's one of the oldest trick in the book for designing stuff: What's really needed is _always a lot less_ than what's appears to be needed. 
-And you can never know how big that discrepancy is until you get around to building it.)
+_And_ you can never know how big that discrepancy is or what's really necessary and what aren't until you actually get around to building it.)
 Let's proceed to defining a state in our automata:
 ```c
 /**
@@ -31,7 +31,8 @@ struct NFAState {
     struct transRule** rules; ///< the transition rules
 };
 ```
-There's no information about which state this state is, because again, we don't really need to.
+There's no information about which state this state is, because again, we don't really need to, 
+its index in the `statePool` will handle that part. 
 Take note that we are using an array of pointers, we will use pointer array and pointer comparsions a lot in this guide.
 Let's define the NFA itself:
 ```c
@@ -103,3 +104,10 @@ struct NFA* createNFA(void) {
 ```
 Now our NFA struct looks good enough, let's figure out how to construct one from a given regex input.
 # How to build a NFA?
+Of course, it's possible to construct NFAs directly from regexs, you can do that too, 
+just fuse some of the steps I listed below and you get a program that eats regexs then spits out NFAs without any apparent intermediary.
+But since this is supposed to be educative, I am not going to cut any corner. Here's everything we need to do:
+    1. First, we will perform some preprocessing that turns all implicit concatenations explicit.
+    2. then, we will construct an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree)(AST) from the preprocessed input.
+    3. then, we will construct the NFA itself from the AST using the [McNaughton–Yamada–Thompson algorithm](https://en.wikipedia.org/wiki/Thompson%27s_construction).
+    4. finally, we will perform some postprocessing on the NFA to ensure correct empty character functionalities.
