@@ -559,6 +559,7 @@ void transit(struct NFA* nfa, char input) {
 }
 ```
 As for that empty character input special case, kindly examine this image from Wikipedia:
+
 ![Example of (ε|a*b) using Thompson's construction, step by step](https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Small-thompson-example.svg/444px-Small-thompson-example.svg.png)
 
 Since an empty input can be interpreted as an arbitrary numbers of empty characters, 
@@ -607,3 +608,85 @@ int contains(struct NFAState** states, int len, struct NFAState* state) {
     return f;
 }
 ```
+But one final issue remains. When we input empty characters, 
+what would happen to states that does not have any empty character accepting rule?
+Since they can't handle empty characters, they will simply panic and commit suicide. 
+We can't have that, can we? Thus here's the postprocessing function, 
+it gives every state that does not have any empty character rule a self-preservation 
+circular empty character rule:
+```c
+/**
+ * @brief performs postprocessing on a compiled NFA,
+ *        add circular empty character transition rules where
+ *        it's needed for the NFA to function correctly
+ * @param nfa target NFA
+ * @returns void
+ */
+void postProcessing(struct NFA* nfa) {
+    // Since the sub NFA's states and rules are managed
+    // through their own pools, recursion is necessary
+    for (int i = 0; i < nfa->subCount; ++i) {
+        postProcessing(nfa->subs[i]);
+    }
+
+    // If a state does not have any empty character accepting rules,
+    // we add a rule that circles back to itself
+    // So this state will be preserved when
+    // empty characters are inputted
+    for (int i = 0; i < nfa->stateCount; ++i) {
+
+        struct NFAState* pState = nfa->statePool[i];
+        int f = 0;
+        for (int j = 0; j < pState->ruleCount; ++j) {
+            if(pState->rules[j]->cond == '\0') {
+                f = 1;
+                break;
+            }
+        }
+
+        if (!f) {
+            addRule(nfa, createRule(pState, '\0'), i);
+        }
+    }
+}
+```
+## The End, thanks for reading
+Let's conclude this guide with a usage example:
+```c
+/**
+ * @brief Testing helper function
+ * @param regex the regular expression to be used
+ * @param string the string to match against
+ * @param expected expected results
+ * @returns void
+ */
+void testHelper(const char* regex, const char* string, const int expected) {
+    char* temp = preProcessing(regex);
+    struct ASTNode* node = buildAST(temp);
+
+
+    struct NFA* nfa = compileFromAST(node);
+    postProcessing(nfa);
+
+    // reallocate the outermost NFA's current states pool
+    // because it will actually be used to store all the states
+    nfa->currentStates = realloc(nfa->currentStates, sizeof(struct NFAState*) * 100);
+    // Starts the NFA by add its starting state to the pool
+    nfa->currentStates[nfa->CSCount++] = nfa->statePool[0];
+
+    // feeds empty characters into the NFA before and after
+    // every normal character
+    for (size_t i = 0; i < strlen(string); ++i) {
+        transit(nfa, '\0');
+        transit(nfa, string[i]);
+    }
+    transit(nfa, '\0');
+
+    assert(isAccepting(nfa) == expected);
+
+    destroyNFA(nfa);
+    destroyNode(node);
+    free(temp);
+}
+```
+That's all, thanks for reading!
