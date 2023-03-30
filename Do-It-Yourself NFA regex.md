@@ -1,8 +1,8 @@
-# We are going to build a NFA-based regex matcher, that's it
+# We are going to build a NFA-based regex matcher, that's it.
 Theory of computation had always been a favorite subject of mine, (Along side digitial circuit design, physics, philosophy and countless other that is, my interests are quite diverse) there's something simply fascinating about inspecting an automata at work, about how patterns and functions emerge from simple rules. 
 But it's a lot less enjoyable to try and build one yourself, (When you don't really know how do it, that is), for one, directly applying the formal definitions is unlike to helpful. 
 But the close association between automatas and graph theory does presents opportunities, and in this guide I will walk you through the process of building a very simple NFA-based regex matcher. (And we are doing it in C, even though it's obviously easier with in OOP. I insist that you can never fully learn anything without implementing it in a low level language.)
-# How to describe an finite automata?
+## How to describe an finite automata?
 Formally, a NFA have five components: Starting state(s), recognized alphabets, transition rules, available states, accepting state(s). 
 And like I've said, we will not rely too much on this, we are going to do it the graph theory way. 
 Let's begin by defining a transition rule, which would be an edge in a graph representation of a NFA:
@@ -103,7 +103,7 @@ struct NFA* createNFA(void) {
 }
 ```
 Now our NFA struct looks good enough, let's figure out how to construct one from a given regex input.
-# How to build a NFA?
+## How to build a NFA?
 Of course, it's possible to construct NFAs directly from regexs, you can do that too, 
 just fuse some of the steps I listed below and you get a program that eats regexs then spits out NFAs without any apparent intermediary.
 But since this is supposed to be educative, I am not going to cut any corner. Here's everything we need to do:
@@ -111,3 +111,60 @@ But since this is supposed to be educative, I am not going to cut any corner. He
 2. then, we will construct an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree)(AST) from the preprocessed input.
 3. then, we will construct the NFA itself from the AST using the [McNaughton–Yamada–Thompson algorithm](https://en.wikipedia.org/wiki/Thompson%27s_construction).
 4. finally, we will perform some postprocessing on the NFA to ensure correct empty character functionalities.
+Let's analyse these steps further in their own sections.
+### Preprocessing
+Normally, all concatenations are implicit, like this:
+```
+(c|ab*)*(d|ef)*
+```
+if we use `+` to represent concatenations, it would be:
+```
+(c|a+b*)*+(d|e+f)*
+```
+While we won't actually use `+`, the idea of making concatations explicit 
+before further processing is obivously quite appealing.
+To do that, we simply need to identify where an implicit concatenation is happening, 
+then insert a relevant symbol. Here's the code:
+```c
+/**
+ * @brief performs preprocessing on a regex string,
+ *        making all implicit concatenations explicit
+ * @param input target regex string
+ * @returns pointer to the processing result
+ */
+char* preProcessing(const char* input) {
+    const size_t len = strlen(input);
+    if(len == 0) {
+        char* str = malloc(1);
+        str[0] = '\0';
+        return str;
+    }
+    char* str = malloc(len * 2);
+    size_t op = 0;
+
+    for (size_t i = 0; i < len - 1; ++i) {
+        char c = input[i];
+        str[op++] = c;
+        // one character lookahead
+        char c1 = input[i + 1];
+
+        if( (isLiteral(c) && isLiteral(c1)) ||
+            (isLiteral(c) && c1 == '(') ||
+            (c == ')' && c1 == '(') ||
+            (c == ')' && isLiteral(c1)) ||
+            (c == '*' && isLiteral(c1)) ||
+            (c == '*' && c1 == '(')
+                ) {
+            // '\n' is used to represent concatenation
+            // in this implementation
+            str[op++] = '\n';
+        }
+    }
+
+    str[op++] = input[len - 1];
+    str[op] = '\0';
+    return str;
+}
+```
+Take note of that if condition which spanned six lines, 
+otherwise this algorithm just does what it says on the tin, there's not much to analyse.
