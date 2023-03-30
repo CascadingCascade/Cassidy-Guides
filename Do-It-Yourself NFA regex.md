@@ -52,11 +52,11 @@ struct NFA {
     int wrapperFlag;                 ///< whether this NFA is a concatenation wrapper
 };
 ```
-What's up with that `subs` and `wrapperflag`? They will be explained later.
+What's up with that `subs` and `wrapperflag`? The reason for their existence will be explained later.
 One of the reasons for using pools is that it simplifies memory management, 
 when the time comes to destroy an NFA object, we can simply free everything in the pool.
 No memory will be leaked because all usages are checked out from the pool.
-Using pools also allow us to compare pointers instead of the object they point to.  
+Using pools also allow us to compare pointers instead of the object they point to, which is vastly faster and simpler.
 (Using pools is actually an established design pattern, in case that you don't know it yet.)
 Thus the code to add rules to our NFA reads:
 ```c
@@ -98,3 +98,5 @@ struct NFA* createNFA(void) {
     return nfa;
 }
 ```
+Now our NFA struct looks good enough, let's figure out how to construct one from a given regex input.
+# How to build a NFA?
