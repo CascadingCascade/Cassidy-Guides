@@ -1,10 +1,10 @@
 # We are going to build a NFA-based regex matcher, that's it
 Theory of computation had always been a favorite subject of mine, (Along side digitial circuit design, physics, philosophy and countless other that is, my interests are quite diverse) there's something simply fascinating about inspecting an automata at work, about how patterns and functions emerge from simple rules. 
-But it's a lot less enjoyable to try and implement one yourself, (When you don't really know how do it, that is), for one, directly applying the formal definitions is unlike to helpful. 
-But the close association between automatas and graph theory presents opportunities, and in this guide I will walk you through the process of building a very simple NFA-based regex matcher. (And we are doing it in C, even though it's obviously easier with in OOP. I insist that you can never fully learn anything without implementing it in a low level language.)
+But it's a lot less enjoyable to try and build one yourself, (When you don't really know how do it, that is), for one, directly applying the formal definitions is unlike to helpful. 
+But the close association between automatas and graph theory does presents opportunities, and in this guide I will walk you through the process of building a very simple NFA-based regex matcher. (And we are doing it in C, even though it's obviously easier with in OOP. I insist that you can never fully learn anything without implementing it in a low level language.)
 # How to describe an finite automata?
 Formally, a NFA have five components: Starting state(s), recognized alphabets, transition rules, available states, accepting state(s). 
-And like I've said, we will not rely too much on this and we are going to do it the graph theory way. 
+And like I've said, we will not rely too much on this, we are going to do it the graph theory way. 
 Let's begin by defining a transition rule, which would be an edge in a graph representation of a NFA:
 ```c
 /**
@@ -15,7 +15,10 @@ struct transRule {
     char cond;               ///< the character required to activate this transition
 };
 ```
-There's no information about the state to start from, why? because we don't need to include it.
+There's no information about the state to start from, why? Because we don't need to include it, 
+we can simply let the state from which it starts from keep a list of rules starting from this state.
+(That's one of the oldest trick in the book for designing stuff: What's really needed is _always a lot less_ than what's appears to be needed. 
+And you can never know how big that discrepancy is until you get around to building it.)
 Let's proceed to defining a state in our automata:
 ```c
 /**
