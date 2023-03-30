@@ -667,7 +667,7 @@ void testHelper(const char* regex, const char* string, const int expected) {
     struct NFA* nfa = compileFromAST(node);
     postProcessing(nfa);
 
-    // reallocate the outermost NFA's current states pool
+    // reallocates the outermost NFA's current states pool
     // because it will actually be used to store all the states
     nfa->currentStates = realloc(nfa->currentStates, sizeof(struct NFAState*) * 100);
     // Starts the NFA by add its starting state to the pool
