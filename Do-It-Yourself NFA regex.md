@@ -107,7 +107,7 @@ Now our NFA struct looks good enough, let's figure out how to construct one from
 Of course, it's possible to construct NFAs directly from regexs, you can do that too, 
 just fuse some of the steps I listed below and you get a program that eats regexs then spits out NFAs without any apparent intermediary.
 But since this is supposed to be educative, I am not going to cut any corner. Here's everything we need to do:
-    1. First, we will perform some preprocessing that turns all implicit concatenations explicit.
-    2. then, we will construct an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree)(AST) from the preprocessed input.
-    3. then, we will construct the NFA itself from the AST using the [McNaughton–Yamada–Thompson algorithm](https://en.wikipedia.org/wiki/Thompson%27s_construction).
-    4. finally, we will perform some postprocessing on the NFA to ensure correct empty character functionalities.
+1. First, we will perform some preprocessing that turns all implicit concatenations explicit.
+2. then, we will construct an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree)(AST) from the preprocessed input.
+3. then, we will construct the NFA itself from the AST using the [McNaughton–Yamada–Thompson algorithm](https://en.wikipedia.org/wiki/Thompson%27s_construction).
+4. finally, we will perform some postprocessing on the NFA to ensure correct empty character functionalities.
