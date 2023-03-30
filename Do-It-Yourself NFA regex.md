@@ -560,6 +560,7 @@ void transit(struct NFA* nfa, char input) {
 ```
 As for that empty character input special case, kindly examine this image from Wikipedia:
 ![Example of (ε|a*b) using Thompson's construction, step by step](https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Small-thompson-example.svg/444px-Small-thompson-example.svg.png)
+
 Since an empty input can be interpreted as an arbitrary numbers of empty characters, 
 and an arbitrary number of empty characters can be interpreted as existing between two normal characters, 
 the starting state in the image actually should be consider as six states superimposed on each other. 
@@ -584,5 +585,25 @@ void findEmpty(struct NFAState* target, struct NFAState** states, int *sc) {
             findEmpty(pRule->target, states, sc);
         }
     }
+}
+```
+And here's the `contains()` helper function, not much to see here:
+```c
+/**
+ * @brief helper function to determine an element's presence in an array
+ * @param states target array
+ * @param len length of the target array
+ * @param state the element to search for
+ * @returns `1` if the element is present, `0` otherwise
+ */
+int contains(struct NFAState** states, int len, struct NFAState* state) {
+    int f = 0;
+    for (int i = 0; i < len; ++i) {
+        if(states[i] == state) {
+            f = 1;
+            break;
+        }
+    }
+    return f;
 }
 ```
