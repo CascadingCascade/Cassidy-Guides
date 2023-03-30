@@ -1,10 +1,10 @@
 # We are going to build a NFA-based regex matcher, that's it.
 Theory of computation had always been a favorite subject of mine, (Along side digitial circuit design, physics, philosophy and countless other that is, my interests are quite diverse) there's something simply fascinating about inspecting an automata at work, about how patterns and functions emerge from simple rules. 
 But it's a lot less enjoyable to try and build one yourself, (When you don't really know how do it, that is), for one, directly applying the formal definitions is unlike to helpful. 
-But the close association between automatas and graph theory does presents opportunities, and in this guide I will walk you through the process of building a very simple NFA-based regex matcher. (And we are doing it in C, even though it's obviously easier with in OOP. I insist that you can never fully learn anything without implementing it in a low level language.)
+But the close association between finite state automatas and graph theory does presents opportunities, and in this guide I will walk you through the process of building a very simple NFA-based regex matcher. (And we are doing it in C, even though it's obviously easier with in OOP. I insist that you can never fully learn anything without implementing it in a low level language.)
 ## How to describe an finite automata?
 Formally, a NFA have five components: Starting state(s), recognized alphabets, transition rules, available states, accepting state(s). 
-And like I've said, we will not rely too much on this, we are going to do it the graph theory way. 
+But like I've said, we will not rely too much on this, we are going to do it the graph theory way. 
 Let's begin by defining a transition rule, which would be an edge in a graph representation of a NFA:
 ```c
 /**
@@ -19,7 +19,7 @@ There's no information about the state to start from, why? Because we don't need
 we can simply let the state from which it starts from keep a list of rules starting from this state.
 (That's one of the oldest trick in the book for designing stuff: What's really needed is _always a lot less_ than what's appears to be needed. 
 _And_ you can never know how big that discrepancy is or what's really necessary and what aren't until you actually get around to building it.)
-Let's proceed to defining a state in our automata:
+Let's proceed to defining a state in our automata, which would be a vertex:
 ```c
 /**
  * @brief Definition for a NFA state. Each NFAState object is initialized
@@ -111,7 +111,7 @@ But since this is supposed to be educative, I am not going to cut any corner. He
 2. then, we will construct an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree)(AST) from the preprocessed input.
 3. then, we will construct the NFA itself from the AST using the [McNaughton–Yamada–Thompson algorithm](https://en.wikipedia.org/wiki/Thompson%27s_construction).
 4. finally, we will perform some postprocessing on the NFA to ensure correct empty character functionalities.
-Let's analyse these steps further in their own sections.
+Let's analyse these steps in their own sections.
 ### Preprocessing
 Normally, all concatenations are implicit, like this:
 ```
@@ -179,18 +179,18 @@ char* preProcessing(const char* input) {
 }
 ```
 Take note of that if condition which spanned six lines, 
-otherwise this algorithm just does what it says on the tin, there's not much to analyse.
+otherwise this algorithm just does what it says on the tin, there's not much of interest.
 ### The Abstract Syntax Tree
 When we evaluate a regex by hand, we follow various rules. For example, when we compute this:
 ```
 regex: (c|a*b)*
 string: caba
 ```
-We first note that there's star at the regex's end, and the parentheses signified that this star applies to the entire `c|a*b`.
-Then we select `c` from `c|a*b`, then `a*b` from `c|a*b` to match that `ab`, repeat `a` once.
-But since neither `c` nor `a*b` can match the final `a`, this string does not belongs the regular language described by the regex.
+We first note that there's a star at the regex string's end, and the parentheses signified that this star applies to the entire `c|a*b`.
+Then we select `c` from `c|a*b`, then `a*b` from `c|a*b` to match that `ab`, repeating `a` once.
+But since neither `c` nor `a*b` can match the final `a`, this string does not belongs the regular language described by the regex string.
 The point to take away from this example is during evaluation, it is vital to have _a sense of precedence and scope_.
-Luckily, both concepts can be described simultaneously by the abstract syntax tree. 
+Luckily, both concepts can be described simultaneously by an abstract syntax tree. 
 An AST constructed from that regex might look like this: 
 ```
 star:
@@ -243,7 +243,7 @@ size_t indexOf(const char* str, char key) {
     return 0;
 }
 ``` 
-Here's another utiliy function to make up for C's lack of a builtin equivalent to, say, Java's `substring()`:
+Here's another utiliy function to make up for C's lack of a builtin equivalent to, say, Java's `subString()`:
 ```c
 /**
  * @brief utility function to create a subString
@@ -336,7 +336,7 @@ struct ASTNode* buildAST(const char* input) {
 }
 ```
 I trust that you can just read the code and understand it? 
-Anyway, the idea is that we go down one level every time a matching pair of parentheses are encountered, 
+Anyway, the idea is that we go down one recursion level every time a matching pair of parentheses is encountered, 
 the function will have as many levels of recursion as the regex inputted.
 for the `(c|a*b)*` example earlier, it will be parsed like this:
 ```
@@ -377,7 +377,7 @@ star:
 ```
 You get the idea? Good.
 ### Building the NFA from AST
-Finally the real stuff, yeah? 
+Finally the real stuff, yes? 
 The algorithm we will use is recursive like what we've used to build the AST, 
 which is in turn recursive just like the regex itself. 
 (Come to think of it, formal language theory really is recursion all the way down.) 
@@ -566,7 +566,7 @@ As for that empty character input special case, kindly examine this image from W
 
 Since an empty input can be interpreted as an arbitrary numbers of empty characters, 
 and an arbitrary number of empty characters can be interpreted as existing between two normal characters, 
-the starting state in the image actually should be consider as six states superimposed on each other. 
+the starting state in the image actually can be consider as six states superimposed on each other. 
 We need to account for this by adding all states reachable by inputting empty characters to `newStates` pool. 
 The `findEmpty()` helper function is define thus:
 ```c
