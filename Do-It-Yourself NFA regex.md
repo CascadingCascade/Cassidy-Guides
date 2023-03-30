@@ -150,7 +150,7 @@ char* preProcessing(const char* input) {
         str[0] = '\0';
         return str;
     }
-    
+
     char* str = malloc(len * 2);
     size_t op = 0;
 
@@ -652,7 +652,7 @@ void postProcessing(struct NFA* nfa) {
     }
 }
 ```
-## The End, thanks for reading
+## The End, Thanks for Reading!
 Let's conclude this guide with a usage example:
 ```c
 /**
