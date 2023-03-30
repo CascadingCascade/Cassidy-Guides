@@ -497,3 +497,92 @@ target `rn`'s starting state, essentially rendering it unreachable.
 Then we creates a special "wrapper" NFA that doesn't really have any states of its own, 
 (Hence the `wrapperFlag` to prevent double freeing when destorying NFA objects.) 
 but purely function as a gateway between the two sub NFAs and shallower levels of recursion.
+### Postprocessing
+Now our NFA is ready 
+(or I would like to say, but the title of this section is a dead giveaway, does it not?), 
+let's write the transition function:
+```c
+/**
+ * @brief moves a NFA forward
+ * @param nfa target NFA
+ * @param input the character to be fed into the NFA
+ * @returns void
+ */
+void transit(struct NFA* nfa, char input) {
+    struct NFAState** newStates = malloc(sizeof(struct NFAState*) * 10);
+    int NSCount = 0;
+
+    if (input == '\0') {
+        // In case of empty character input, it's possible for
+        // a state to transit to another state that's more than
+        // one rule away, we need to take that into account
+        for (int i = nfa->CSCount - 1; i > -1; --i) {
+            struct NFAState *pState = nfa->currentStates[i];
+            nfa->CSCount--;
+            struct NFAState** states = malloc(sizeof(struct NFAState*) * 10);
+            int sc = 0;
+            findEmpty(pState, states, &sc);
+            for (int j = 0; j < sc; ++j) {
+                if(!contains(newStates,NSCount, states[j])) {
+                    newStates[NSCount++] = states[j];
+                }
+            }
+            free(states);
+        }
+    } else {
+        // Iterates through all current states
+        for (int i = nfa->CSCount - 1; i > -1; --i) {
+            struct NFAState *pState = nfa->currentStates[i];
+            // Gradually empties the current states pool, so
+            // it can be refilled
+            nfa->CSCount--;
+
+            // Iterate through rules of this state
+            for (int j = 0; j < pState->ruleCount; ++j) {
+                const struct transRule *pRule = pState->rules[j];
+
+                if(pRule->cond == input) {
+                    if(!contains(newStates, NSCount, pRule->target)) {
+                        newStates[NSCount++] = pRule->target;
+                    }
+                }
+
+            }
+    }
+    }
+
+    nfa->CSCount = NSCount;
+    for (int i = 0; i < NSCount; ++i) {
+        nfa->currentStates[i] = newStates[i];
+    }
+    free(newStates);
+}
+```
+As for that empty character input special case, kindly examine this image from Wikipedia:
+![Example of (ε|a*b) using Thompson's construction, step by step](https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Small-thompson-example.svg/444px-Small-thompson-example.svg.png)
+Since an empty input can be interpreted as an arbitrary numbers of empty characters, 
+and an arbitrary number of empty characters can be interpreted as existing between two normal characters, 
+the starting state in the image actually should be consider as six states superimposed on each other. 
+We need to account for this by adding all states reachable by inputting empty characters to `newStates` pool. 
+The `findEmpty()` helper function is define thus:
+```c
+/**
+ * @brief helper function to manage empty character transitions
+ * @param target target NFA
+ * @param states pointer to results storage location
+ * @param sc pointer to results count storage location
+ * @returns void
+ */
+void findEmpty(struct NFAState* target, struct NFAState** states, int *sc) {
+    for (int i = 0; i < target->ruleCount; ++i) {
+        const struct transRule *pRule = target->rules[i];
+
+        if (pRule->cond == '\0' && !contains(states, *sc, pRule->target)) {
+            states[(*sc)++] = pRule->target;
+            // the use of `states` and `sc` is necessary
+            // to sync data across recursion levels
+            findEmpty(pRule->target, states, sc);
+        }
+    }
+}
+```
